@@ -683,30 +683,32 @@
                 font-size: 0.9em;
             }
         }
-        /* Star Rating Styles */
+                /* Star Rating Styles - replace existing .star rules with this */
         .star {
             font-size: 2em;
             cursor: pointer;
-            transition: all 0.3s ease;
-            filter: grayscale(100%);
-            opacity: 0.5;
+            transition: all 0.18s ease;
+            color: #000;               /* inactive star color = black (dark star) */
+            opacity: 0.85;
+            text-shadow: none;
+            user-select: none;
         }
-        
+
         .star:hover {
             transform: scale(1.2);
-            filter: grayscale(0%);
+            filter: drop-shadow(0 0 6px rgba(0,0,0,0.15));
             opacity: 1;
         }
-        
+
         .star.active {
-            filter: grayscale(0%);
+            color: #FFD700;           /* bright star color = gold */
             opacity: 1;
-            animation: starGlow 0.5s ease-in-out;
+            animation: starGlow 0.45s ease-in-out;
         }
-        
+
         @keyframes starGlow {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.3); }
+            0%   { transform: scale(1); }
+            50%  { transform: scale(1.25); }
             100% { transform: scale(1); }
         }
         .content-panel {
@@ -865,11 +867,11 @@
                     <div style="margin-bottom: 30px;">
                         <h2 style="color: #2c3e50; margin-bottom: 20px;">Rate Your Experience</h2>
                         <div class="star-rating" style="display: flex; justify-content: center; gap: 10px; margin-bottom: 20px;">
-                            <span class="star" data-rating="1" onclick="setRating(1)">⭐</span>
-                            <span class="star" data-rating="2" onclick="setRating(2)">⭐</span>
-                            <span class="star" data-rating="3" onclick="setRating(3)">⭐</span>
-                            <span class="star" data-rating="4" onclick="setRating(4)">⭐</span>
-                            <span class="star" data-rating="5" onclick="setRating(5)">⭐</span>
+                            <span class="star" data-rating="1" onclick="setRating(1)">★</span>
+                            <span class="star" data-rating="2" onclick="setRating(2)">★</span>
+                            <span class="star" data-rating="3" onclick="setRating(3)">★</span>
+                            <span class="star" data-rating="4" onclick="setRating(4)">★</span>
+                            <span class="star" data-rating="5" onclick="setRating(5)">★</span>
                         </div>
                         <p id="ratingText" style="text-align: center; color: #666; font-style: italic;">Click on stars to rate</p>
                     </div>
@@ -1432,9 +1434,12 @@
         function updateStarDisplay(tempRating = currentRating) {
             const stars = document.querySelectorAll('.star');
             stars.forEach((star, index) => {
+                // set filled vs empty glyph
                 if (index < tempRating) {
+                    star.textContent = '★';    // filled star
                     star.classList.add('active');
                 } else {
+                    star.textContent = '☆';    // hollow star for "dark" star
                     star.classList.remove('active');
                 }
             });
@@ -1444,6 +1449,7 @@
             const stars = document.querySelectorAll('.star');
             stars.forEach(star => {
                 star.classList.remove('active');
+                star.textContent = '☆'; // start as hollow black star
 
                 // Hover lights up temporary stars
                 star.addEventListener('mouseover', () => {
@@ -1454,13 +1460,20 @@
                 star.addEventListener('mouseout', () => {
                     updateStarDisplay();
                 });
+
+                // allow keyboard accessibility (space/enter to set rating)
+                star.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        setRating(parseInt(star.dataset.rating, 10));
+                    }
+                });
+                star.setAttribute('tabindex', '0');
             });
 
             currentRating = 0;
             document.getElementById('ratingText').textContent = 'Click on stars to rate';
         }
 
-        // Ensure events are attached after DOM is loaded
         document.addEventListener('DOMContentLoaded', initializeStarDisplay);
 
         // Submit Feedback
@@ -1573,7 +1586,7 @@
                 // Update statistics
                 document.getElementById('totalFeedback').textContent = feedbacks.length;
                 const avgRating = feedbacks.length > 0 ? (totalRating / feedbacks.length).toFixed(1) : '0.0';
-                document.getElementById('averageRating').textContent = avgRating + ' ⭐';
+                document.getElementById('averageRating').textContent = avgRating + ' ★';
 
                 // Update feedback list
                 const feedbackList = document.getElementById('feedbackList');
@@ -1583,15 +1596,22 @@
                     feedbackList.innerHTML = feedbacks.map(feedback => {
                         const date = feedback.timestamp.toDate().toLocaleDateString();
                         const time = feedback.timestamp.toDate().toLocaleTimeString();
-                        const stars = '⭐'.repeat(feedback.rating) + '☆'.repeat(5 - feedback.rating);
-                        
+                        const stars = '★'.repeat(feedback.rating) + '☆'.repeat(5 - feedback.rating);
+
+                        // choose comment color by rating: 5/4 -> greenish, 3 -> orange, 1/2 -> red
+                        let commentColor = '#2c3e50'; // default (dark)
+                        if (feedback.rating >= 4) commentColor = '#1e7e34';       // green
+                        else if (feedback.rating === 3) commentColor = '#e67e22'; // orange
+                        else commentColor = '#c0392b';                           // red
+
                         return `
                             <div style="background: white; padding: 15px; border-radius: 10px; margin-bottom: 15px; border-left: 4px solid #0066ff;">
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                    <span style="font-size: 1.2em;">${stars}</span>
+                                    <span style="font-size: 1.2em; color: #333;">${stars}</span>
                                     <span style="color: #666; font-size: 0.9em;">${date} ${time}</span>
                                 </div>
-                                ${feedback.comment ? `<p style="color: #2c3e50; margin: 0; font-style: italic;">"${feedback.comment}"</p>` : '<p style="color: #999; margin: 0; font-style: italic;">No comment provided</p>'}
+                                ${feedback.comment ? `<p style="color: ${commentColor}; margin: 0; font-style: italic;">"${feedback.comment}"</p>`
+                                                    : '<p style="color: #999; margin: 0; font-style: italic;">No comment provided</p>'}
                             </div>
                         `;
                     }).join('');
