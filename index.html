@@ -1417,23 +1417,23 @@
         // Star Rating Functions
         function setRating(rating) {
             currentRating = rating;
-            updateStarDisplay();
-            
+            updateStarDisplay(rating);
+
             const ratingTexts = {
                 1: "Poor - We'll work to improve",
-                2: "Fair - There's room for improvement", 
+                2: "Fair - There's room for improvement",
                 3: "Good - Thanks for your feedback",
                 4: "Very Good - We're glad you enjoyed it",
                 5: "Excellent - Thank you so much!"
             };
-            
+
             document.getElementById('ratingText').textContent = ratingTexts[rating];
         }
 
-        function updateStarDisplay() {
+        function updateStarDisplay(tempRating = currentRating) {
             const stars = document.querySelectorAll('.star');
             stars.forEach((star, index) => {
-                if (index < currentRating) {
+                if (index < tempRating) {
                     star.classList.add('active');
                 } else {
                     star.classList.remove('active');
@@ -1441,15 +1441,28 @@
             });
         }
 
-        // Initialize star display on page load
         function initializeStarDisplay() {
             const stars = document.querySelectorAll('.star');
             stars.forEach(star => {
                 star.classList.remove('active');
+
+                // Hover lights up temporary stars
+                star.addEventListener('mouseover', () => {
+                    updateStarDisplay(parseInt(star.dataset.rating, 10));
+                });
+
+                // On mouse out, revert to saved rating
+                star.addEventListener('mouseout', () => {
+                    updateStarDisplay();
+                });
             });
+
             currentRating = 0;
             document.getElementById('ratingText').textContent = 'Click on stars to rate';
         }
+
+        // Ensure events are attached after DOM is loaded
+        document.addEventListener('DOMContentLoaded', initializeStarDisplay);
 
         // Submit Feedback
         async function submitFeedback() {
