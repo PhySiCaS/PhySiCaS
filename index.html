@@ -299,12 +299,17 @@
                         </div>
                         <div class="input-group">
                             <label>$\theta$ - Launch Angle (degrees):</label>
-                            <input type="number" id="angle" value="45" step="0.1">
+                            <div style="display: flex; gap: 5px; align-items: center;">
+                                <input type="number" id="projectile_angle" value="4.5" step="0.1">
+                                <span style="font-weight: bold;">×10^</span>
+                                <input type="number" id="projectile_angle_exp" value="1" step="1" style="width: 60px;" title="Power of 10">
+                            </div>
+                            
                         </div>
                         <div class="input-group">
                             <label>$g$ - Gravitational Acceleration (m/s²):</label>
                             <div style="display: flex; gap: 5px; align-items: center;">
-                                <input type="number" id="g" value="9.807" step="0.001" style="flex: 1;">
+                                <input type="number" id="g" value="9.80665" step="0.001" style="flex: 1;">
                                 <span style="font-weight: bold;">×10^</span>
                                 <input type="number" id="g_exp" value="0" step="1" style="width: 60px;" title="Power of 10">
                             </div>
@@ -581,7 +586,7 @@
                             <div class="formula-box">
                                 <strong>Key Results:</strong><br>
                                 Image Distance: $s' = \dfrac{fs}{s-f}$<br>
-                                Magnification: $\mathcal{M} = -\dfrac{s'}{s} = \dfrac{h'}{h} = - \dfrac{f}{s-f}$<br>
+                                Magnification: $M = -\dfrac{s'}{s} = \dfrac{h'}{h} = - \dfrac{f}{s-f}$<br>
                                 Image Height: $h' = \dfrac{hf}{f-s}$
                             </div>
                         </div>
@@ -660,7 +665,7 @@
                             <div class="formula-box">
                                 <strong>Key Results:</strong><br>
                                 Image Distance: $s' = \dfrac{Rs}{2s-R}$<br>
-                                Magnification: $\mathcal{M} = -\dfrac{s'}{s} = \dfrac{h'}{h} = - \dfrac{R}{2s-R}$<br>
+                                Magnification: $M = -\dfrac{s'}{s} = \dfrac{h'}{h} = - \dfrac{R}{2s-R}$<br>
                                 Image Height: $h' = \dfrac{Rh}{R-2s}$
                             </div>
                         </div>
@@ -964,10 +969,28 @@
             }, 1000);
         });
 
+        //Scientific Notation in Latex
+        function sciLatex(value, n = 4) {
+            if (isNaN(value)) return "N/A";
+    
+            // n-1 decimals since toExponential counts 1 before + decimals = sig figs
+            let expStr = Number(value).toExponential(n - 1);
+            let [coeff, exp] = expStr.split("e");
+            let exponent = parseInt(exp, 10);
+
+            // Format LaTeX
+            if (exponent === 0) {
+                return coeff; // just the coefficient
+            } else {
+                return `${coeff} \\times 10^{${exponent}}`;
+            }
+        }
+
+
         // Projectile Motion Functions
         function calculateProjectile() {
             const v0 = parseFloat(document.getElementById('v0').value) * Math.pow(10, parseFloat(document.getElementById('v0_exp').value));
-            const angleValue = parseFloat(document.getElementById('angle').value);
+            const angleValue = parseFloat(document.getElementById('projectile_angle').value) * Math.pow(10, parseFloat(document.getElementById('projectile_angle_exp').value));
             const angle = angleValue * Math.PI / 180;
             const beta = parseFloat(document.getElementById('beta').value) * Math.pow(10, parseFloat(document.getElementById('beta_exp').value));
             const mass = parseFloat(document.getElementById('mass').value) * Math.pow(10, parseFloat(document.getElementById('mass_exp').value));
@@ -1023,16 +1046,13 @@
 
             // Display results
             const resultsDiv = document.getElementById('projectileResults');
-            let dragInfo = beta === 0 ? "(No air resistance)" : `(With air resistance: β = ${beta})`;
+            let dragInfo = beta === 0 ? "No air resistance" : `With air resistance: $\\beta = ${sciLatex(beta)}$`;
             
             resultsDiv.innerHTML = `
-                <div class="output-item"><strong>$\\tau$ (Flight Time):</strong> ${flightTime.toFixed(3)} s ${dragInfo}</div>
-                <div class="output-item"><strong>$R$ (Range):</strong> ${range.toFixed(3)} m</div>
-                <div class="output-item"><strong>$H$ (Maximum Height):</strong> ${maxHeight.toFixed(3)} m</div>
-                <div class="output-item"><strong>Initial Velocity Components:</strong><br>
-                    $v_{0x} = ${v0x.toFixed(3)}$ m/s<br>
-                    $v_{0y} = ${v0y.toFixed(3)}$ m/s
-                </div>
+                <div class="output-item"><strong>${dragInfo}</strong></div>
+                <div class="output-item"><strong>Flight Time:</strong> $\\tau = ${sciLatex(flightTime)}\\, \\mathrm{s}$</div>
+                <div class="output-item"><strong>Range:</strong> $R=${sciLatex(range)}\\, \\mathrm{m}$</div>
+                <div class="output-item"><strong>Maximum Height:</strong> $H=${sciLatex(maxHeight)}\\, \\mathrm{m}$</div>
 
             `;
             
@@ -1051,7 +1071,7 @@
             const graphCtx = graphCanvas.getContext('2d');
             
             const v0 = parseFloat(document.getElementById('v0').value) * Math.pow(10, parseFloat(document.getElementById('v0_exp').value));
-            const angleValue = parseFloat(document.getElementById('angle').value);
+            const angleValue = parseFloat(document.getElementById('projectile_angle').value) * Math.pow(10, parseFloat(document.getElementById('projectile_angle_exp').value));
             const angle = angleValue * Math.PI / 180;
             const beta = parseFloat(document.getElementById('beta').value) * Math.pow(10, parseFloat(document.getElementById('beta_exp').value));
             const mass = parseFloat(document.getElementById('mass').value) * Math.pow(10, parseFloat(document.getElementById('mass_exp').value));
@@ -1371,11 +1391,11 @@
             // Display results
             const resultsDiv = document.getElementById('springResults');
             let resultsHTML = `
-                <div class="output-item"><strong>$\\omega$ (Angular Frequency):</strong> ${omega.toFixed(3)} rad/s</div>
-                <div class="output-item"><strong>$T$ (Period):</strong> ${period.toFixed(3)} s</div>
-                <div class="output-item"><strong>$\\nu$ (Frequency):</strong> ${frequency.toFixed(3)} Hz</div>
-                <div class="output-item"><strong>$A$ (Amplitude):</strong> ${A.toFixed(3)} m</div>
-                <div class="output-item"><strong>$\\phi$ (Phase Angle):</strong> ${phi.toFixed(3)} rad</div>
+                <div class="output-item"><strong>Angular Frequency:</strong> $\\omega=${sciLatex(omega)}\\, \\mathrm{rad{\\cdot}s^{-1}}$</div>
+                <div class="output-item"><strong>Period:</strong> $T=${sciLatex(period)}\\, \\mathrm{s}$</div>
+                <div class="output-item"><strong>Frequency:</strong> $\\nu=${sciLatex(frequency)}\\, \\mathrm{s^{-1}}$</div>
+                <div class="output-item"><strong>Amplitude:</strong> $A=${sciLatex(A)}\\, \\mathrm{m}$</div>
+                <div class="output-item"><strong>Phase Angle:</strong> $\\phi=${sciLatex(phi)}\\, \\mathrm{rad}$</div>
                 `;
             
             resultsDiv.innerHTML = resultsHTML;
@@ -1681,9 +1701,9 @@
             // Display results
             const resultsDiv = document.getElementById('lensResults');
             let resultsHTML = `
-                <div class="output-item"><strong>$s'$ (Image Distance):</strong> ${s_image.toFixed(3)} m</div>
-                <div class="output-item"><strong>$\\mathcal{M}$ (Magnification):</strong> ${mag.toFixed(3)} </div>
-                <div class="output-item"><strong>$h'$ (Image Height):</strong> ${h_image.toFixed(3)} m</div>
+                <div class="output-item"><strong>Image Distance:</strong> $s'=${sciLatex(s_image)}\\, \\mathrm{m}$</div>
+                <div class="output-item"><strong>Magnification:</strong> $M=${sciLatex(mag)}$</div>
+                <div class="output-item"><strong>Image Height:</strong> $h'=${sciLatex(h_image)}\\, \\mathrm{m}$</div>
                 `;
             
             resultsDiv.innerHTML = resultsHTML;
@@ -1911,9 +1931,9 @@
             // Display results
             const resultsDiv = document.getElementById('mirrorResults');
             let resultsHTML = `
-                <div class="output-item"><strong>$s'$ (Image Distance):</strong> ${s_image.toFixed(3)} m</div>
-                <div class="output-item"><strong>$\\mathcal{M}$ (Magnification):</strong> ${mag.toFixed(3)} </div>
-                <div class="output-item"><strong>$h'$ (Image Height):</strong> ${h_image.toFixed(3)} m</div>
+                <div class="output-item"><strong>Image Distance:</strong> $s'=${sciLatex(s_image)}\\, \\mathrm{m}$</div>
+                <div class="output-item"><strong>Magnification:</strong> $M=${sciLatex(mag)}$</div>
+                <div class="output-item"><strong>Image Height:</strong> $h'=${sciLatex(h_image)}\\, \\mathrm{m}$</div>
                 `;
             
             resultsDiv.innerHTML = resultsHTML;
